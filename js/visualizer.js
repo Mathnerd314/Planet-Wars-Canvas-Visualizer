@@ -3,6 +3,7 @@ var Visualizer = {
     ctx: null,
     frame: 0,
     playing: false,
+    reverse: false,
     haveDrawnBackground: false,
     frameDrawStarted: null,
     frameDrawEnded: null,
@@ -169,20 +170,31 @@ var Visualizer = {
     
     start: function() {
         this.playing = true;
+        this.reverse = false;
         setTimeout(function() { Visualizer.run.apply(Visualizer); }, 1);
         $("#play-button").html("&#9553;");
+        $("#play-reverse-button").html("&#9664;");
+    },
+    
+    startReverse: function() {
+        this.playing = true;
+        this.reverse = true;
+        setTimeout(function() { Visualizer.run.apply(Visualizer); }, 1);
+        $('#play-button').html("&#9654;");
+        $("#play-reverse-button").html("&#9553;");
     },
     
     stop: function() {
         this.playing = false;
         $('#play-button').html("&#9654;");
+        $("#play-reverse-button").html("&#9664;");
     },
     
     run: function() {
       if(!this.playing) return;
-      this.frameDrawStarted = new Date().getTime()
+      this.frameDrawStarted = new Date().getTime();
       
-      if(this.frame >= Visualizer.moves.length ){
+      if((!this.reverse && this.frame >= Visualizer.moves.length) || (this.reverse && this.frame <= 0)){
         this.stop();
         return;
       }
@@ -193,7 +205,10 @@ var Visualizer = {
         frameAdvance = 0.3;
       }
       
-      this.frame += Math.min(1,Math.max(0.0166, frameAdvance ));
+      if(this.reverse)
+        this.frame -= Math.min(1,Math.max(0.0166, frameAdvance ));
+      else
+        this.frame += Math.min(1,Math.max(0.0166, frameAdvance ));
       this.frameDrawEnded = new Date().getTime();
       
       
@@ -302,11 +317,23 @@ var ParserUtils = {
     
     // Hook buttons
     $('#play-button').click(function() {
-        if(!Visualizer.playing){
+        if(!Visualizer.playing || Visualizer.reverse){
           if(Visualizer.frame > Visualizer.moves.length - 2){
             Visualizer.setFrame(0);
           }
           Visualizer.start();
+        } else {
+          Visualizer.stop();
+        }
+        return false;
+    });
+    
+    $('#play-reverse-button').click(function() {
+        if(!Visualizer.playing || !Visualizer.reverse){
+          if(Visualizer.frame < 2){
+            Visualizer.setFrame(Visualizer.moves.length);
+          }
+          Visualizer.startReverse();
         } else {
           Visualizer.stop();
         }
